@@ -14,6 +14,7 @@ class App extends React.Component {
       myId: '',
       myUsername: '',
       mySymbol: '',
+      opponentSymbol: '',
       currentPlayer: 'O',
       gameStarted: false,
       playerOne: '',
@@ -21,23 +22,13 @@ class App extends React.Component {
       findingGame: false,
       creatingGame: false,
       findingGameFailed: false,
-      board: {
-        one: "", 
-        two: "", 
-        three: "", 
-        four: "", 
-        five: "", 
-        six: "", 
-        seven: "", 
-        eight: "", 
-        nine: ""
-      }
+      board: ['','','','','','','','',''],
+      hover: ['','','','','','','','',''],
     }
 
     Socket.emit('NEW_USER')
 
     Socket.on('GET_CURRENT_USER', user => {
-      console.log('GET_CURRENT_USER returned: ', user)
       this.setState({ 
         myId: user.id,
         myUsername: user.username,
@@ -45,19 +36,19 @@ class App extends React.Component {
     })
 
     Socket.on('RECEIVE_BROADCAST', response => {
-      console.log(response)
+      if (!response.tictactoe) { return }
 
-      if (response.message == "tic-tac-toe-move") {
-        if (response.played == undefined ) { return }
-        if (response.username == this.state.myUsername) { return }
-        if (response.username != this.state.myOpponent) { return }
-        let currentBoard = this.state.board
-        currentBoard[response.played] = this.state.currentPlayer
-        this.setState({board: currentBoard})
-      if (this.checkGame() !== "win") { this.changePlayer() }
+      if (response.tictactoe.action === 'move') {
+        if (response.tictactoe.played === undefined ) { return }
+        if (response.tictactoe.target !== this.state.myUsername) { return }
+        if (response.username !== this.state.myOpponent) { return }
+        let board = [...this.state.board]
+        board[response.tictactoe.played] = this.state.currentPlayer
+        this.setState({ board })
+      if (this.checkGame() === 'ongoing') { this.changePlayer() }
       }
 
-      if (response.message == "tic-tac-toe-connect") {
+      if (response.tictactoe.action === 'connect') {
         if (!this.state.creatingGame) { return }
         this.setState({ 
           playerTwo: response.username,
@@ -65,55 +56,76 @@ class App extends React.Component {
           creatingGame: false,
           gameStarted: true,
         })
-
-        const newConnectSuccess = {
+        const gameAccept = {
           username: this.state.myUsername,
-          message: "tic-tac-toe-connect-success",
+          message: this.getLorem(),
           timestamp: Date.now(),
+          tictactoe: { action: 'connect-accept', target: response.username }
         }
-      
-        Socket.emit('BROADCAST_MESSAGE', newConnectSuccess)
+        Socket.emit('BROADCAST_MESSAGE', gameAccept)
       }
 
-      if (response.message == "tic-tac-toe-connect-success") {
+      if (response.tictactoe.action === 'connect-accept') {
         if (!this.state.findingGame) { return }
+        if (response.tictactoe.target !== this.state.myUsername) { return }
         this.setState({ 
           playerOne: response.username,
           playerTwo: this.state.myUsername,
           myOpponent: response.username,
           findingGame: false,
           mySymbol: 'X',
+          opponentSymbol: 'O',
           gameStarted: true,
           findingGameFailed: false,
         })
       }
 
     })
-
-
-
-
-
   }
 
-  handleClick = e => {
+  getLorem = () => {
+    const lorem = [
+      'Lorem ipsum dolor sit amet.',
+      'Consectetur adipiscing elit.',
+      'Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.',
+      'Ut enim ad minim veniam.',
+      'Quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.',
+      'Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur.',
+      'Excepteur sint occaecat cupidatat non proident.',
+      'Sunt in culpa qui officia deserunt mollit anim id est laborum.',
+      'Sed ut perspiciatis unde omnis iste natus error sit voluptatem accusantium doloremque laudantium.',
+      'Totam rem aperiam.',
+      'Eaque ipsa quae ab illo inventore veritatis et quasi architecto beatae vitae dicta sunt explicabo.',
+      'Nemo enim ipsam voluptatem quia voluptas sit aspernatur aut odit aut fugit.',
+      'Sed quia consequuntur magni dolores eos qui ratione voluptatem sequi nesciunt.',
+      'Neque porro quisquam est.',
+      'Qui dolorem ipsum quia dolor sit amet.',
+      'Consectetur, adipisci velit, sed quia non numquam eius modi tempora incidunt ut labore et dolore magnam aliquam quaerat voluptatem.',
+      'Ut enim ad minima veniam.',
+      'Quis nostrum exercitationem ullam corporis suscipit laboriosam.',
+      'Nisi ut aliquid ex ea commodi consequatur?',
+      'Vel illum qui dolorem eum fugiat quo voluptas nulla pariatur?',
+    ]
+    return lorem[Math.floor(Math.random()*lorem.length)]
+  }
+
+  handleClick = (index) => {
     if (!this.state.gameStarted) { return }
-    let selected = e.target.id
-    if ((this.checkGame() !== "ongoing") || (this.state.board[selected] !== "")) { return }
-    if (this.state.mySymbol != this.state.currentPlayer) { return }
-    let currentBoard = this.state.board
-    currentBoard[selected] = this.state.currentPlayer
-    this.setState({board: currentBoard})
-    if (this.checkGame() !== "win") { this.changePlayer() }
+    if (this.state.mySymbol !== this.state.currentPlayer) { return }
+    if (this.checkGame() !== 'ongoing') { return }
+    if (this.state.board[index] !== '') { return }
+    const board = [...this.state.board]
+    board[index] = this.state.currentPlayer
+    this.setState({ board })
+    if (this.checkGame() === 'ongoing') { this.changePlayer() }
 
-    const newMove = {
+    const gameMove = {
       username: this.state.myUsername,
-      message: "tic-tac-toe-move",
+      message: this.getLorem(),
       timestamp: Date.now(),
-      played: selected,
+      tictactoe: { action: 'move', played: index, target: this.state.myOpponent }
     }
-    Socket.emit('BROADCAST_MESSAGE', newMove)
-
+    Socket.emit('BROADCAST_MESSAGE', gameMove)
 
   }
 
@@ -123,6 +135,7 @@ class App extends React.Component {
       playerOne: this.state.myUsername,
       playerTwo: '',
       mySymbol: 'O',
+      opponentSymbol: 'X',
       creatingGame: true,
       findingGame: false,
       gameStarted: false,
@@ -151,121 +164,158 @@ class App extends React.Component {
       }
     }, 5000)
 
-    const newConnect = {
+    const gameConnect = {
       username: this.state.myUsername,
-      message: "tic-tac-toe-connect",
+      message: this.getLorem(),
       timestamp: Date.now(),
+      tictactoe: { action: 'connect' }
     }
 
-    Socket.emit('BROADCAST_MESSAGE', newConnect)
+    Socket.emit('BROADCAST_MESSAGE', gameConnect)
   }
 
-  isEqual = (x,y,z) => { if ((x !== "") && (x === y) && (x === z)) { return true } }
+  isEqual = (x,y,z) => { if ((x !== '') && (x === y) && (x === z)) { return true } }
 
   checkGame = () => {
-    let score = this.state.board
-    if (this.isEqual(score.one,score.two,score.three)) { return "win" }
-    else if (this.isEqual(score.one,score.four,score.seven)) { return "win" }
-    else if (this.isEqual(score.one,score.five,score.nine)) { return "win" }
-    else if (this.isEqual(score.two,score.five,score.eight)) { return "win" }
-    else if (this.isEqual(score.three,score.five,score.seven)) { return "win" }
-    else if (this.isEqual(score.three,score.six,score.nine)) { return "win" }
-    else if (this.isEqual(score.four,score.five,score.six)) { return "win" }
-    else if (this.isEqual(score.seven,score.eight,score.nine)) { return "win" }
-    else if (this.checkDraw() === true) { return "draw" }
-    else return "ongoing"
+    const score = this.state.board
+    if (this.isEqual(score[0],score[1],score[2])) { return score[0] }
+    else if (this.isEqual(score[0],score[3],score[6])) { return score[0] }
+    else if (this.isEqual(score[0],score[4],score[8])) { return score[0] }
+    else if (this.isEqual(score[1],score[4],score[7])) { return score[1] }
+    else if (this.isEqual(score[2],score[4],score[6])) { return score[2] }
+    else if (this.isEqual(score[2],score[5],score[8])) { return score[2] }
+    else if (this.isEqual(score[3],score[4],score[5])) { return score[3] }
+    else if (this.isEqual(score[6],score[7],score[8])) { return score[6] }
+    else if (this.checkDraw() === true) { return 'draw' }
+    else return 'ongoing'
   }
 
   checkDraw = () => {
-    let board = this.state.board
-    for (let key in board) { if (board[key] === "") { return false } }
+    let score = this.state.board
+    for (let i = 0; i < score.length; i++) { if (score[i] === '') { return false } }
     return true
   }
 
   changePlayer = () => {
-    if (this.state.currentPlayer === "O") { this.setState({currentPlayer: "X"}) }
-    else this.setState({currentPlayer: "O"}) 
+    if (this.state.currentPlayer === 'O') { this.setState({currentPlayer: 'X'}) }
+    else this.setState({currentPlayer: 'O'}) 
   }
 
   resetBoard = () => {
-    let currentBoard = {one: "", two: "", three: "", four: "", five: "", six: "", seven: "", eight: "", nine: ""}
-    this.setState({ board: currentBoard })
-    this.setState({currentPlayer: "O"})
+   this.setState({ 
+     board: ['','','','','','','','',''],
+     currentPlayer: 'O',
+    })
   }
 
+  mouseEnter = (index) => {
+    if (!this.state.gameStarted) { return }
+    if (this.state.mySymbol !== this.state.currentPlayer) { return }
+    if (this.state.board[index] !== '') { return }
+    const hover = ['','','','','','','','','']
+    hover[index] = this.state.mySymbol
+    this.setState({ hover })
+  }
+
+  mouseLeave = (index) => {
+    const hover = [...this.state.hover]
+    hover[index] = ''
+    this.setState({ hover })    
+  }
+
+
   render() {
-    let boardComponents = Object.keys(this.state.board).map(key =>
-      <div onClick={this.handleClick} key={key} className='game-tile' id={key}>{this.state.board[key]}</div>
-    )
+
+    let boardComponents = this.state.board.map((box, index) => {
+
+      let spanClass = "lead display-3 font-weight-bold "
+      if (this.state.board[index] === 'O') { spanClass += "text-playerone" }
+      else { spanClass += "text-playertwo"}
+
+      let divClass = "game-tile "
+      if (index !== 6 && index !== 7 && index !== 8) { divClass += "border-tac-bottom " }
+      if (index !== 2 && index !== 5 && index !== 8) { divClass += "border-tac-right" }
+
+      return (
+        <div 
+          key={index} 
+          className={divClass}
+          onClick={() => this.handleClick(index)} 
+          onMouseEnter={() => this.mouseEnter(index)}
+          onMouseLeave={() => this.mouseLeave(index)}
+        >
+          {this.state.board[index] !== '' ? 
+            <span className={spanClass}>{this.state.board[index]}</span> :
+            <span className="lead display-3 font-weight-bold text-playerhover">{this.state.hover[index]}</span>
+          }
+        </div>
+      )})
+
     return (
     <Container fluid>
       <Row>
-        <Col md="12" className="bg-dark d-flex py-4 justify-content-center align-items-center flex-column text-center">
+        <Col md="12" className="bg-dark d-flex py-4 justify-content-center align-items-center flex-column text-center cursor-default">
 
         { !this.state.creatingGame && !this.state.findingGame && !this.state.findingGameFailed && !this.state.gameStarted ? 
           <div className="cursor-default">
             <p className="text-light lead my-0">PEPEGA Tic Tac Toe</p>
           </div>
-          : null 
-        }
+          : null }
 
         { this.state.creatingGame ? 
-          <div className="cursor-default">
-            <img src={loading} width="75" height="75"></img>
+          <React.Fragment>
+            <img src={loading} alt="Create-Loader" width="75" height="75"></img>
             <p className="text-light lead my-0">Waiting for an opponent...</p>
-          </div>
+          </React.Fragment>
           : null }
 
         { this.state.findingGame ? 
-          <div className="cursor-default">
-            <img src={loading} width="75" height="75"></img>
+          <React.Fragment>
+            <img src={loading} alt="Find-Loader" width="75" height="75"></img>
             <p className="text-light lead my-0">Finding game...</p>
-          </div>
-          : null 
-        }
+          </React.Fragment>
+          : null }
 
         { this.state.findingGameFailed ? 
-            <p className="text-light lead my-0">No game found, create a new game yourself!</p>
-          : null 
-        }
+            <p className="text-light lead my-0">Unable to find game, create one yourself!</p>
+          : null }
 
         { this.state.gameStarted ?
-          <div className="cursor-default">
-            <p className="text-light lead my-0">Player One (O): {this.state.playerOne} {this.state.playerOne == this.state.myUsername && this.state.myUsername != '' ? '(You)' : null}</p>
-            <p className="text-light lead my-0">Player Two (X): {this.state.playerTwo} {this.state.playerTwo == this.state.myUsername && this.state.myUsername != '' ? '(You)' : null}</p>
+          <React.Fragment>
+            <p className="text-light lead my-0">Player One (O): {this.state.playerOne} {this.state.playerOne === this.state.myUsername && this.state.myUsername !== '' ? '(You)' : null}</p>
+            <p className="text-light lead mt-0 mb-3">Player Two (X): {this.state.playerTwo} {this.state.playerTwo === this.state.myUsername && this.state.myUsername !== '' ? '(You)' : null}</p>
 
-            { (this.checkGame() === "win") ? (<p className="lead text-light text-center mt-2 mb-0">WINNER: {(this.state.currentPlayer == "O")? this.state.playerOne:this.state.playerTwo}</p>) : null }
-      { (this.checkGame() === "draw") ? (<p className="lead text-light text-center mt-2 mb-0">DRAW</p>) : null }
-      { (this.checkGame() !== "win") && (this.checkGame() !== "draw") && (this.state.gameStarted === true) ? 
-          <p className="lead text-light text-center mt-2 mb-0">
-          {(this.state.currentPlayer == this.state.mySymbol)? `Your `:`${this.state.myOpponent}'s `}
-          turn
-          </p> : null 
-      }
+            { this.checkGame() === this.state.mySymbol ? 
+              <p className="lead text-light text-center my-0">You won!</p> 
+              : null }
 
-          </div>
+            { this.checkGame() === this.state.opponentSymbol ? 
+              <p className="lead text-light text-center my-0">You lost!</p>
+              : null } 
+
+            { this.checkGame() === 'draw' ? 
+              <p className="lead text-light text-center my-0">It's a draw!</p> 
+              : null }
+            { this.checkGame() === 'ongoing' && this.state.gameStarted === true ? 
+              <p className="lead text-light text-center my-0">
+                { this.state.currentPlayer === this.state.mySymbol ? 
+                  "It's your turn." : 
+                  `Waiting for ${this.state.myOpponent}'s move.`}
+              </p> : null }
+          </React.Fragment>
         : null }
 
         </Col>  
 
         <Col md="12" className="">
-      <div>
-        <div className="mt-5 text-center">
-          <button onClick={this.handleCreate} disabled={!this.state.myUsername || this.state.creatingGame} className="mr-3">Create a New Game</button>
-          <button onClick={this.handleConnect} disabled={!this.state.myUsername || this.state.findingGame}>Connect to a Game</button>
-        </div>
-      </div>
-      <div id="game-board">{boardComponents}</div>
-      {/* <button className="reset" onClick={this.resetBoard}>RESET</button> */}
-      {/* { (this.checkGame() === "win") ? (<p className="lead text-light text-center mb-5">WINNER: {(this.state.currentPlayer == "O")? this.state.playerOne:this.state.playerTwo}</p>) : null }
-      { (this.checkGame() === "draw") ? (<p className="lead text-light text-center mb-5">DRAW</p>) : null }
-      { (this.checkGame() !== "win") && (this.checkGame() !== "draw") && (this.state.gameStarted === true) ? 
-          <p className="lead text-light text-center mb-5">
-          {(this.state.currentPlayer == this.state.mySymbol)? `Your `:`${this.state.myOpponent}'s `}
-          turn
-          </p> : null 
-      } */}
-      </Col>
+          <div>
+            <div className="mt-5 text-center">
+              <button onClick={this.handleCreate} disabled={!this.state.myUsername || this.state.creatingGame || this.state.findingGame} className="mr-3">Create a New Game</button>
+              <button onClick={this.handleConnect} disabled={!this.state.myUsername || this.state.findingGame}>Connect to a Game</button>
+            </div>
+          </div>
+          <div id="game-board">{boardComponents}</div>
+        </Col>
       </Row>
     </Container>
     )

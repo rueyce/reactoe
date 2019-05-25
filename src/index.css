@@ -29,15 +29,10 @@ code {
   height: 300px;
   display: flex;
   flex-wrap: wrap;
-  border: 3px solid white;
-  background-color: #343a40;
+  /* border: 2px solid white; */
+  /* background-color: #343a40; */
   box-sizing: content-box;
 }
-
-/* .game-row {
-  display: flex;
-  box-sizing: border-box;
-} */
 
 .game-tile {
   display: flex;
@@ -51,27 +46,32 @@ code {
   cursor: default;
   font-family: 'Courier New', Courier, monospace;
   font-weight: bold;
-  border: 3px solid white;
+  /* border: 2px solid white; */
   color: white;
-  background-color: #343a40;
-}
-
-.my-message {
-  font-size: 35px;
-  font-weight: bold;
-  text-align: center;
-  color: white;
-  margin: 20px;
-}
-
-.message-two {
-  font-size: 20px;
-  font-weight: bold;
-  text-align: center;
-  color: white;
-  margin: 20px;
+  /* background-color: #343a40; */
 }
 
 .cursor-default {
   cursor: default;
+}
+
+.text-playerone {
+  color: yellow;
+}
+
+.text-playertwo {
+  color: magenta;
+}
+
+.text-playerhover {
+  color: silver;
+  opacity: 0.3;
+}
+
+.border-tac-bottom {
+  border-bottom: 2px solid silver;
+}
+
+.border-tac-right {
+  border-right: 2px solid silver;
 }
