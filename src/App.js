@@ -173,7 +173,7 @@ class App extends React.Component {
         // })
         this.handleCreate()
       }
-    }, 1000)
+    }, 2000)
 
     const gameConnect = {
       username: this.state.myUsername,
