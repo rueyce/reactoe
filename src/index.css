@@ -55,12 +55,14 @@ code {
   cursor: default;
 }
 
-.text-playerone {
-  color: yellow;
+.text-playertwo {
+  /* color: #9B4AD5;; */
+  color: #007bff;
 }
 
-.text-playertwo {
-  color: magenta;
+.text-playerone {
+  /* color: pink; */
+  color: #28a745;
 }
 
 .text-playerhover {
@@ -69,9 +71,23 @@ code {
 }
 
 .border-tac-bottom {
-  border-bottom: 2px solid silver;
+  border-bottom: 4px solid white;
 }
 
+/* dark #343a40 */
+/* darkblueish rgb(13, 13, 61) */
+/* success #28a745 */
+/* primary #007bff */
+/* userlist #271933 */
+
 .border-tac-right {
-  border-right: 2px solid silver;
+  border-right: 4px solid white;
 }
+
+.winning-combo-lads {
+  background-color: #343a40;
+}
+
+/* .winning-combo-bois {
+  color: #9B4AD5;
+} */

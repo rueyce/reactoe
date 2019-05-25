@@ -190,6 +190,20 @@ class App extends React.Component {
     else return 'ongoing'
   }
 
+  testForColoring = () => {
+    const score = this.state.board
+    if (this.isEqual(score[0],score[1],score[2])) { return [0,1,2] }
+    else if (this.isEqual(score[0],score[3],score[6])) { return [0,3,6] }
+    else if (this.isEqual(score[0],score[4],score[8])) { return [0,4,8] }
+    else if (this.isEqual(score[1],score[4],score[7])) { return [1,4,7] }
+    else if (this.isEqual(score[2],score[4],score[6])) { return [2,4,6] }
+    else if (this.isEqual(score[2],score[5],score[8])) { return [2,5,8] }
+    else if (this.isEqual(score[3],score[4],score[5])) { return [3,4,5] }
+    else if (this.isEqual(score[6],score[7],score[8])) { return [6,7,8] }
+    else if (this.checkDraw() === true) { return 'draw' }
+    else return 'ongoing'
+  }
+
   checkDraw = () => {
     let score = this.state.board
     for (let i = 0; i < score.length; i++) { if (score[i] === '') { return false } }
@@ -229,12 +243,14 @@ class App extends React.Component {
     let boardComponents = this.state.board.map((box, index) => {
 
       let spanClass = "lead display-3 font-weight-bold "
-      if (this.state.board[index] === 'O') { spanClass += "text-playerone" }
-      else { spanClass += "text-playertwo"}
+      if (this.state.board[index] === 'O') { spanClass += "text-playerone " }
+      else { spanClass += "text-playertwo "}
+      if (this.testForColoring().indexOf(index) !== -1) { spanClass += "winning-combo-bois " }
 
       let divClass = "game-tile "
       if (index !== 6 && index !== 7 && index !== 8) { divClass += "border-tac-bottom " }
-      if (index !== 2 && index !== 5 && index !== 8) { divClass += "border-tac-right" }
+      if (index !== 2 && index !== 5 && index !== 8) { divClass += "border-tac-right " }
+      if (this.testForColoring().indexOf(index) !== -1) { divClass += "winning-combo-lads " }
 
       return (
         <div 
@@ -309,9 +325,9 @@ class App extends React.Component {
 
         <Col md="12" className="">
           <div>
-            <div className="mt-5 text-center">
-              <button onClick={this.handleCreate} disabled={!this.state.myUsername || this.state.creatingGame || this.state.findingGame} className="mr-3">Create a New Game</button>
-              <button onClick={this.handleConnect} disabled={!this.state.myUsername || this.state.findingGame}>Connect to a Game</button>
+            <div className="mt-4 pt-2 text-center">
+              <Button color="success" onClick={this.handleCreate} disabled={!this.state.myUsername || this.state.creatingGame || this.state.findingGame} className="mr-3">Create a New Game</Button>
+              <Button color="primary" onClick={this.handleConnect} disabled={!this.state.myUsername || this.state.findingGame}>Connect to a Game</Button>
             </div>
           </div>
           <div id="game-board">{boardComponents}</div>
