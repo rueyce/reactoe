@@ -1,6 +1,10 @@
 import React from 'react'
 import './App.css'
 
+import loading from './Ripple-1s-200px.gif' 
+
+import { Button, Container, Row, Col } from 'reactstrap'
+
 import Socket from './utils/socket'
 
 class App extends React.Component {
@@ -16,6 +20,7 @@ class App extends React.Component {
       playerTwo: '',
       findingGame: false,
       creatingGame: false,
+      findingGameFailed: false,
       board: {
         one: "", 
         two: "", 
@@ -79,6 +84,7 @@ class App extends React.Component {
           findingGame: false,
           mySymbol: 'X',
           gameStarted: true,
+          findingGameFailed: false,
         })
       }
 
@@ -120,6 +126,7 @@ class App extends React.Component {
       creatingGame: true,
       findingGame: false,
       gameStarted: false,
+      findingGameFailed: false,
     })
   }
 
@@ -129,10 +136,20 @@ class App extends React.Component {
       gameStarted: false,
       creatingGame: false,
       findingGame: true,
+      findingGameFailed: false,
       playerOne: '',
       playerTwo: '',
       myOpponent: '',
     })
+
+    setTimeout(() => {
+      if (this.state.findingGame) { 
+        this.setState({ 
+          findingGame: false,
+          findingGameFailed: true,
+        })
+      }
+    }, 5000)
 
     const newConnect = {
       username: this.state.myUsername,
@@ -181,26 +198,66 @@ class App extends React.Component {
       <div onClick={this.handleClick} key={key} className='game-tile' id={key}>{this.state.board[key]}</div>
     )
     return (
-    <React.Fragment>
+    <Container fluid>
+      <Row>
+        <Col md="12" className="bg-dark d-flex py-4 justify-content-center align-items-center flex-column text-center">
+
+        { !this.state.creatingGame && !this.state.findingGame && !this.state.findingGameFailed && !this.state.gameStarted ? 
+          <div className="cursor-default">
+            <p className="text-light lead my-0">PEPEGA Tic Tac Toe</p>
+          </div>
+          : null 
+        }
+
+        { this.state.creatingGame ? 
+          <div className="cursor-default">
+            <img src={loading} width="75" height="75"></img>
+            <p className="text-light lead my-0">Waiting for an opponent...</p>
+          </div>
+          : null }
+
+        { this.state.findingGame ? 
+          <div className="cursor-default">
+            <img src={loading} width="75" height="75"></img>
+            <p className="text-light lead my-0">Finding game...</p>
+          </div>
+          : null 
+        }
+
+        { this.state.findingGameFailed ? 
+            <p className="text-light lead my-0">No game found, create a new game yourself!</p>
+          : null 
+        }
+
+        { this.state.gameStarted ?
+          <div className="cursor-default">
+            <p className="text-light lead my-0">Player One (O): {this.state.playerOne} {this.state.playerOne == this.state.myUsername && this.state.myUsername != '' ? '(You)' : null}</p>
+            <p className="text-light lead my-0">Player Two (X): {this.state.playerTwo} {this.state.playerTwo == this.state.myUsername && this.state.myUsername != '' ? '(You)' : null}</p>
+          </div>
+        : null }
+
+        </Col>  
+
+        <Col md="12" className="">
       <div>
-        <div>
-          <p>Player One (O): {this.state.playerOne} {this.state.playerOne == this.state.myUsername && this.state.myUsername != '' ? '(You)' : null}</p>
-          <p>Player Two (X): {this.state.playerTwo} {this.state.playerTwo == this.state.myUsername && this.state.myUsername != '' ? '(You)' : null}</p>
+        <div className="mt-5 text-center">
+          <button onClick={this.handleCreate} disabled={!this.state.myUsername} className="mr-3">Create a New Game</button>
+          <button onClick={this.handleConnect} disabled={!this.state.myUsername}>Connect to a Game</button>
         </div>
-        <button onClick={this.handleCreate} disabled={!this.state.myUsername}>Create a New Game</button>
-        <button onClick={this.handleConnect} disabled={!this.state.myUsername}>Connect to a Game</button>
       </div>
       <div id="game-board">{boardComponents}</div>
       {/* <button className="reset" onClick={this.resetBoard}>RESET</button> */}
-      { (this.checkGame() === "win") ? (<p className="message">WINNER: {(this.state.currentPlayer == "O")? this.state.playerOne:this.state.playerTwo}</p>) : null }
-      { (this.checkGame() === "draw") ? (<p className="message">DRAW</p>) : null }
+      { (this.checkGame() === "win") ? (<p className="lead text-light text-center">WINNER: {(this.state.currentPlayer == "O")? this.state.playerOne:this.state.playerTwo}</p>) : null }
+      { (this.checkGame() === "draw") ? (<p className="lead text-light text-center">DRAW</p>) : null }
       { (this.checkGame() !== "win") && (this.checkGame() !== "draw") && (this.state.gameStarted === true) ? 
-          <p className="message">
+          <p className="lead text-light text-center">
           {(this.state.currentPlayer == this.state.mySymbol)? `Your `:`${this.state.myOpponent}'s `}
           turn
           </p> : null 
       }
-    </React.Fragment>
+      </Col>
+      </Row>
+    </Container>
     )
   } 
 }
