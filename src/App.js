@@ -233,6 +233,16 @@ class App extends React.Component {
           <div className="cursor-default">
             <p className="text-light lead my-0">Player One (O): {this.state.playerOne} {this.state.playerOne == this.state.myUsername && this.state.myUsername != '' ? '(You)' : null}</p>
             <p className="text-light lead my-0">Player Two (X): {this.state.playerTwo} {this.state.playerTwo == this.state.myUsername && this.state.myUsername != '' ? '(You)' : null}</p>
+
+            { (this.checkGame() === "win") ? (<p className="lead text-light text-center mt-2 mb-0">WINNER: {(this.state.currentPlayer == "O")? this.state.playerOne:this.state.playerTwo}</p>) : null }
+      { (this.checkGame() === "draw") ? (<p className="lead text-light text-center mt-2 mb-0">DRAW</p>) : null }
+      { (this.checkGame() !== "win") && (this.checkGame() !== "draw") && (this.state.gameStarted === true) ? 
+          <p className="lead text-light text-center mt-2 mb-0">
+          {(this.state.currentPlayer == this.state.mySymbol)? `Your `:`${this.state.myOpponent}'s `}
+          turn
+          </p> : null 
+      }
+
           </div>
         : null }
 
@@ -241,20 +251,20 @@ class App extends React.Component {
         <Col md="12" className="">
       <div>
         <div className="mt-5 text-center">
-          <button onClick={this.handleCreate} disabled={!this.state.myUsername} className="mr-3">Create a New Game</button>
-          <button onClick={this.handleConnect} disabled={!this.state.myUsername}>Connect to a Game</button>
+          <button onClick={this.handleCreate} disabled={!this.state.myUsername || this.state.creatingGame} className="mr-3">Create a New Game</button>
+          <button onClick={this.handleConnect} disabled={!this.state.myUsername || this.state.findingGame}>Connect to a Game</button>
         </div>
       </div>
       <div id="game-board">{boardComponents}</div>
       {/* <button className="reset" onClick={this.resetBoard}>RESET</button> */}
-      { (this.checkGame() === "win") ? (<p className="lead text-light text-center">WINNER: {(this.state.currentPlayer == "O")? this.state.playerOne:this.state.playerTwo}</p>) : null }
-      { (this.checkGame() === "draw") ? (<p className="lead text-light text-center">DRAW</p>) : null }
+      {/* { (this.checkGame() === "win") ? (<p className="lead text-light text-center mb-5">WINNER: {(this.state.currentPlayer == "O")? this.state.playerOne:this.state.playerTwo}</p>) : null }
+      { (this.checkGame() === "draw") ? (<p className="lead text-light text-center mb-5">DRAW</p>) : null }
       { (this.checkGame() !== "win") && (this.checkGame() !== "draw") && (this.state.gameStarted === true) ? 
-          <p className="lead text-light text-center">
+          <p className="lead text-light text-center mb-5">
           {(this.state.currentPlayer == this.state.mySymbol)? `Your `:`${this.state.myOpponent}'s `}
           turn
           </p> : null 
-      }
+      } */}
       </Col>
       </Row>
     </Container>
