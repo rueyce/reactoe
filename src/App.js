@@ -316,7 +316,7 @@ class App extends React.Component {
             <img src={loading} alt="Create-Loader" width="75" height="75"></img>
             {/* <p className="text-light lead my-0">No games found, hosting now.</p>
             <p className="text-light lead my-0">Waiting for players...</p> */}
-            <p className="text-light lead my-0">Searching for other players...</p>
+            <p className="text-light lead my-0">Hosting a room...</p>
           </React.Fragment>
           : null }
 
@@ -324,7 +324,7 @@ class App extends React.Component {
           <React.Fragment>
             <img src={loading} alt="Find-Loader" width="75" height="75"></img>
             {/* <p className="text-light lead my-0">Searching for existing hosts...</p> */}
-            <p className="text-light lead my-0">Searching for other players...</p>
+            <p className="text-light lead my-0">Searching for rooms...</p>
           </React.Fragment>
           : null }
 
