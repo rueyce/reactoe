@@ -10,6 +10,7 @@ import Socket from './utils/socket'
 class App extends React.Component {
   constructor() {
     super()
+    this.timeout = null
     this.state = {
       myId: '',
       myUsername: '',
@@ -37,6 +38,7 @@ class App extends React.Component {
 
     Socket.on('RECEIVE_BROADCAST', response => {
       if (!response.tictactoe) { return }
+      if (response.username === this.state.myUsername ) { return }
 
       if (response.tictactoe.action === 'move') {
         if (response.tictactoe.played === undefined ) { return }
@@ -49,7 +51,7 @@ class App extends React.Component {
       }
 
       if (response.tictactoe.action === 'connect') {
-        if (response.username === this.state.myUsername) { return }
+        // if (response.username === this.state.myUsername) { return }
         if (!this.state.creatingGame) { return }
         this.setState({ 
           playerTwo: response.username,
@@ -79,6 +81,12 @@ class App extends React.Component {
           gameStarted: true,
           findingGameFailed: false,
         })
+      }
+
+      if (response.tictactoe.action === 'host') {
+        if (!this.state.findingGame) { return }
+        clearTimeout(this.timeout)
+        this.handleConnect()
       }
 
     })
@@ -151,6 +159,13 @@ class App extends React.Component {
       gameStarted: false,
       findingGameFailed: false,
     })
+    const gameHost = {
+      username: this.state.myUsername,
+      message: this.getLorem(),
+      timestamp: Date.now(),
+      tictactoe: { action: 'host' }
+    }
+    Socket.emit('BROADCAST_MESSAGE', gameHost)
   }
 
   handleConnect = () => {
@@ -165,7 +180,7 @@ class App extends React.Component {
       myOpponent: '',
     })
 
-    setTimeout(() => {
+    this.timeout = setTimeout(() => {
       if (this.state.findingGame) { 
         // this.setState({ 
         //   findingGame: false,
@@ -173,7 +188,7 @@ class App extends React.Component {
         // })
         this.handleCreate()
       }
-    }, 2000)
+    }, 3000)
 
     const gameConnect = {
       username: this.state.myUsername,
@@ -248,7 +263,6 @@ class App extends React.Component {
     this.setState({ hover })    
   }
 
-
   render() {
 
     let boardComponents = this.state.board.map((box, index) => {
@@ -283,10 +297,17 @@ class App extends React.Component {
       <Row>
         <Col md="12" className="bg-dark d-flex py-4 justify-content-center align-items-center flex-column text-center cursor-default top-status-minh">
 
-        { !this.state.creatingGame && !this.state.findingGame && !this.state.findingGameFailed && !this.state.gameStarted ? 
+        { !this.state.myUsername ? 
+          <React.Fragment>
+            <img src={loading} alt="Mount-Loader" width="75" height="75"></img>
+            <p className="text-light lead my-0">Setting you up...</p>
+          </React.Fragment>
+          : null }
+
+        { !this.state.creatingGame && !this.state.findingGame && !this.state.findingGameFailed && !this.state.gameStarted && this.state.myUsername ? 
           <React.Fragment>
             <p className="text-light lead my-0">Pepega Tic Tac Toe</p>
-            {/* <p className="text-light lead my-0">Component did mount.</p> */}
+            <p className="text-light lead my-0">Your name is {this.state.myUsername}.</p>
           </React.Fragment>
           : null }
 
@@ -343,7 +364,7 @@ class App extends React.Component {
           <div>
             <div className="mt-3 pt-2 text-center">
               {/* <Button color="success" onClick={this.handleCreate} disabled={!this.state.myUsername || this.state.creatingGame || this.state.findingGame} className="mt-2 mx-2">Host Match</Button> */}
-              <Button color="primary" onClick={this.handleConnect} disabled={!this.state.myUsername || this.state.findingGame || this.state.creatingGame || ((this.checkGame() === 'ongoing') && this.state.gameStarted)} className="mt-2 mx-2">Start Matchmaking</Button>
+              <Button color="primary" onClick={this.handleConnect} disabled={!this.state.myUsername || this.state.findingGame || this.state.creatingGame || ((this.checkGame() === 'ongoing') && this.state.gameStarted)} className="mt-2 mx-2">Find a game</Button>
             </div>
           </div>
           <div id="game-board">{boardComponents}</div>
