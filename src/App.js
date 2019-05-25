@@ -49,6 +49,7 @@ class App extends React.Component {
       }
 
       if (response.tictactoe.action === 'connect') {
+        if (response.username === this.state.myUsername) { return }
         if (!this.state.creatingGame) { return }
         this.setState({ 
           playerTwo: response.username,
@@ -105,6 +106,15 @@ class App extends React.Component {
       'Quis nostrum exercitationem ullam corporis suscipit laboriosam.',
       'Nisi ut aliquid ex ea commodi consequatur?',
       'Vel illum qui dolorem eum fugiat quo voluptas nulla pariatur?',
+      'At vero eos et accusamus et iusto odio dignissimos ducimus qui blanditiis praesentium voluptatum deleniti atque corrupti quos dolores et quas molestias excepturi sint occaecati cupiditate non provident.',
+      'Similique sunt in culpa qui officia deserunt mollitia animi.',
+      'Id est laborum et dolorum fuga.',
+      'Et harum quidem rerum facilis est et expedita distinctio.',
+      'Nam libero tempore, cum soluta nobis est eligendi optio cumque nihil impedit quo minus id quod maxime placeat facere possimus.',
+      'Omnis voluptas assumenda est, omnis dolor repellendus.',
+      'Temporibus autem quibusdam et aut officiis debitis aut rerum necessitatibus saepe eveniet ut et voluptates repudiandae sint et molestiae non recusandae.',
+      'Itaque earum rerum hic tenetur a sapiente delectus.',
+      'Ut aut reiciendis voluptatibus maiores alias consequatur aut perferendis doloribus asperiores repellat.',
     ]
     return lorem[Math.floor(Math.random()*lorem.length)]
   }
@@ -157,12 +167,13 @@ class App extends React.Component {
 
     setTimeout(() => {
       if (this.state.findingGame) { 
-        this.setState({ 
-          findingGame: false,
-          findingGameFailed: true,
-        })
+        // this.setState({ 
+        //   findingGame: false,
+        //   findingGameFailed: true,
+        // })
+        this.handleCreate()
       }
-    }, 5000)
+    }, 1000)
 
     const gameConnect = {
       username: this.state.myUsername,
@@ -270,30 +281,35 @@ class App extends React.Component {
     return (
     <Container fluid>
       <Row>
-        <Col md="12" className="bg-dark d-flex py-4 justify-content-center align-items-center flex-column text-center cursor-default">
+        <Col md="12" className="bg-dark d-flex py-4 justify-content-center align-items-center flex-column text-center cursor-default top-status-minh">
 
         { !this.state.creatingGame && !this.state.findingGame && !this.state.findingGameFailed && !this.state.gameStarted ? 
-          <div className="cursor-default">
-            <p className="text-light lead my-0">PEPEGA Tic Tac Toe</p>
-          </div>
+          <React.Fragment>
+            <p className="text-light lead my-0">Pepega Tic Tac Toe</p>
+            <p className="text-light lead my-0">Component did mount.</p>
+          </React.Fragment>
           : null }
 
         { this.state.creatingGame ? 
           <React.Fragment>
             <img src={loading} alt="Create-Loader" width="75" height="75"></img>
-            <p className="text-light lead my-0">Waiting for an opponent...</p>
+            <p className="text-light lead my-0">No games found, hosting now.</p>
+            <p className="text-light lead my-0">Waiting for players...</p>
           </React.Fragment>
           : null }
 
         { this.state.findingGame ? 
           <React.Fragment>
             <img src={loading} alt="Find-Loader" width="75" height="75"></img>
-            <p className="text-light lead my-0">Finding game...</p>
+            <p className="text-light lead my-0">Searching for existing hosts...</p>
           </React.Fragment>
           : null }
 
         { this.state.findingGameFailed ? 
-            <p className="text-light lead my-0">Unable to find game, create one yourself!</p>
+          <React.Fragment>
+            <p className="text-light lead my-0">Looks like no one's hosting.</p>
+            <p className="text-light lead my-0">Host one yourself!</p>
+          </React.Fragment>
           : null }
 
         { this.state.gameStarted ?
@@ -325,9 +341,9 @@ class App extends React.Component {
 
         <Col md="12" className="">
           <div>
-            <div className="mt-4 pt-2 text-center">
-              <Button color="success" onClick={this.handleCreate} disabled={!this.state.myUsername || this.state.creatingGame || this.state.findingGame} className="mr-3">Create a New Game</Button>
-              <Button color="primary" onClick={this.handleConnect} disabled={!this.state.myUsername || this.state.findingGame}>Connect to a Game</Button>
+            <div className="mt-3 pt-2 text-center">
+              {/* <Button color="success" onClick={this.handleCreate} disabled={!this.state.myUsername || this.state.creatingGame || this.state.findingGame} className="mt-2 mx-2">Host Match</Button> */}
+              <Button color="primary" onClick={this.handleConnect} disabled={!this.state.myUsername || this.state.findingGame || this.state.creatingGame || ((this.checkGame() === 'ongoing') && this.state.gameStarted)} className="mt-2 mx-2">Start Matchmaking</Button>
             </div>
           </div>
           <div id="game-board">{boardComponents}</div>
