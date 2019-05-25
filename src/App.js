@@ -286,7 +286,7 @@ class App extends React.Component {
         { !this.state.creatingGame && !this.state.findingGame && !this.state.findingGameFailed && !this.state.gameStarted ? 
           <React.Fragment>
             <p className="text-light lead my-0">Pepega Tic Tac Toe</p>
-            <p className="text-light lead my-0">Component did mount.</p>
+            {/* <p className="text-light lead my-0">Component did mount.</p> */}
           </React.Fragment>
           : null }
 
