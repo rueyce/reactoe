@@ -273,7 +273,7 @@ class App extends React.Component {
 
           { !this.state.findingGame && !this.state.gameStarted && this.state.myUsername ? 
             <React.Fragment>
-              <p className="text-light lead my-0" style={{fontSize:22}}>Multiplayer Pepega Toe</p>
+              <p className="text-light lead my-0" style={{fontSize:22}}>Chatroom Tic-Tac-Toe</p>
               <p className="text-light lead my-0" style={{fontSize:22}}>Hello, {this.state.myUsername}.</p>
             </React.Fragment>
             : null }
