@@ -10,7 +10,6 @@ import Socket from './utils/socket'
 class App extends React.Component {
   constructor() {
     super()
-    this.timeout = null
     this.state = {
       myId: '',
       myUsername: '',
@@ -26,70 +25,6 @@ class App extends React.Component {
       board: ['','','','','','','','',''],
       hover: ['','','','','','','','',''],
     }
-
-    Socket.emit('NEW_USER')
-
-    Socket.on('GET_CURRENT_USER', user => {
-      this.setState({ 
-        myId: user.id,
-        myUsername: user.username,
-      })
-    })
-
-    Socket.on('RECEIVE_BROADCAST', response => {
-      if (!response.tictactoe) { return }
-      if (response.username === this.state.myUsername ) { return }
-
-      if (response.tictactoe.action === 'move') {
-        if (response.tictactoe.played === undefined ) { return }
-        if (response.tictactoe.target !== this.state.myUsername) { return }
-        if (response.username !== this.state.myOpponent) { return }
-        let board = [...this.state.board]
-        board[response.tictactoe.played] = this.state.currentPlayer
-        this.setState({ board })
-      if (this.checkGame() === 'ongoing') { this.changePlayer() }
-      }
-
-      if (response.tictactoe.action === 'connect') {
-        // if (response.username === this.state.myUsername) { return }
-        if (!this.state.creatingGame) { return }
-        this.setState({ 
-          playerTwo: response.username,
-          myOpponent: response.username,
-          creatingGame: false,
-          gameStarted: true,
-        })
-        const gameAccept = {
-          username: this.state.myUsername,
-          message: this.getLorem(),
-          timestamp: Date.now(),
-          tictactoe: { action: 'connect-accept', target: response.username }
-        }
-        Socket.emit('BROADCAST_MESSAGE', gameAccept)
-      }
-
-      if (response.tictactoe.action === 'connect-accept') {
-        if (!this.state.findingGame) { return }
-        if (response.tictactoe.target !== this.state.myUsername) { return }
-        this.setState({ 
-          playerOne: response.username,
-          playerTwo: this.state.myUsername,
-          myOpponent: response.username,
-          findingGame: false,
-          mySymbol: 'X',
-          opponentSymbol: 'O',
-          gameStarted: true,
-          findingGameFailed: false,
-        })
-      }
-
-      if (response.tictactoe.action === 'host') {
-        if (!this.state.findingGame) { return }
-        clearTimeout(this.timeout)
-        this.handleConnect()
-      }
-
-    })
   }
 
   getLorem = () => {
@@ -136,7 +71,6 @@ class App extends React.Component {
     board[index] = this.state.currentPlayer
     this.setState({ board })
     if (this.checkGame() === 'ongoing') { this.changePlayer() }
-
     const gameMove = {
       username: this.state.myUsername,
       message: this.getLorem(),
@@ -147,58 +81,26 @@ class App extends React.Component {
 
   }
 
-  handleCreate = () => {
-    this.resetBoard()
-    this.setState({ 
-      playerOne: this.state.myUsername,
-      playerTwo: '',
-      mySymbol: 'O',
-      opponentSymbol: 'X',
-      creatingGame: true,
-      findingGame: false,
-      gameStarted: false,
-      findingGameFailed: false,
-    })
-    const gameHost = {
-      username: this.state.myUsername,
-      message: this.getLorem(),
-      timestamp: Date.now(),
-      tictactoe: { action: 'host' }
-    }
-    Socket.emit('BROADCAST_MESSAGE', gameHost)
-  }
-
   handleConnect = () => {
     this.resetBoard()
     this.setState({
       gameStarted: false,
-      creatingGame: false,
       findingGame: true,
-      findingGameFailed: false,
       playerOne: '',
       playerTwo: '',
       myOpponent: '',
+      mySymbol: '',
+      opponentSymbol: '',
     })
-
-    this.timeout = setTimeout(() => {
-      if (this.state.findingGame) { 
-        // this.setState({ 
-        //   findingGame: false,
-        //   findingGameFailed: true,
-        // })
-        this.handleCreate()
-      }
-    }, 3000)
-
-    const gameConnect = {
+    const gameLooking = {
       username: this.state.myUsername,
       message: this.getLorem(),
       timestamp: Date.now(),
-      tictactoe: { action: 'connect' }
+      tictactoe: { action: 'finding' }
     }
-
-    Socket.emit('BROADCAST_MESSAGE', gameConnect)
+    Socket.emit('BROADCAST_MESSAGE', gameLooking)
   }
+
 
   isEqual = (x,y,z) => { if ((x !== '') && (x === y) && (x === z)) { return true } }
 
@@ -263,6 +165,79 @@ class App extends React.Component {
     this.setState({ hover })    
   }
 
+  componentDidMount() {
+    Socket.emit('NEW_USER')
+
+    Socket.on('GET_CURRENT_USER', user => {
+      this.setState({ 
+        myId: user.id,
+        myUsername: user.username,
+      })
+    })
+
+    Socket.on('RECEIVE_BROADCAST', response => {
+      if (!response.tictactoe) { return }
+      if (response.username === this.state.myUsername ) { return }
+
+      if (response.tictactoe.action === 'move') {
+        if (response.tictactoe.played === undefined ) { return }
+        if (response.tictactoe.target !== this.state.myUsername) { return }
+        if (response.username !== this.state.myOpponent) { return }
+        let board = [...this.state.board]
+        board[response.tictactoe.played] = this.state.currentPlayer
+        this.setState({ board })
+        if (this.checkGame() === 'ongoing') { this.changePlayer() }
+      }
+
+      if (response.tictactoe.action === 'connect') {
+        if (response.tictactoe.target !== this.state.myUsername) { return }
+        if (!this.state.findingGame) { return }
+        this.setState({ 
+          playerOne: this.state.myUsername,
+          playerTwo: response.username,
+          myOpponent: response.username,
+          mySymbol: 'O',
+          opponentSymbol: 'X',
+          findingGame: false,
+          gameStarted: true,
+        })
+        const gameAccept = {
+          username: this.state.myUsername,
+          message: this.getLorem(),
+          timestamp: Date.now(),
+          tictactoe: { action: 'connect-accept', target: response.username }
+        }
+        Socket.emit('BROADCAST_MESSAGE', gameAccept)
+      }
+
+      if (response.tictactoe.action === 'connect-accept') {
+        if (!this.state.findingGame) { return }
+        if (response.tictactoe.target !== this.state.myUsername) { return }
+        this.setState({ 
+          playerOne: response.username,
+          playerTwo: this.state.myUsername,
+          myOpponent: response.username,
+          mySymbol: 'X',
+          opponentSymbol: 'O',
+          findingGame: false,
+          gameStarted: true,
+        })
+      }
+
+      if (response.tictactoe.action === 'finding') {
+        if (!this.state.findingGame) { return }
+        const gameConnect = {
+          username: this.state.myUsername,
+          message: this.getLorem(),
+          timestamp: Date.now(),
+          tictactoe: { action: 'connect', target: response.username }
+        }
+        Socket.emit('BROADCAST_MESSAGE', gameConnect)
+      }
+
+    })
+  }
+
   render() {
 
     let boardComponents = this.state.board.map((box, index) => {
@@ -300,14 +275,20 @@ class App extends React.Component {
         { !this.state.myUsername ? 
           <React.Fragment>
             <img src={loading} alt="Mount-Loader" width="75" height="75"></img>
-            <p className="text-light lead my-0">Setting you up...</p>
+            <p className="text-light lead my-0" style={{fontSize:22}}>Contacting server...</p>
+            {/* <p className="lead my-0 text-success font-weight-bold" style={{fontSize:25}}>[O] Trodden Coil (You)</p> */}
+            {/* <p className="lead my-0 py-0 text-light">vs</p> */}
+            {/* <p className="lead my-0 text-primary font-weight-bold" style={{fontSize:25}}>[X] Unstitched Scent</p> */}
+
           </React.Fragment>
           : null }
 
         { !this.state.creatingGame && !this.state.findingGame && !this.state.findingGameFailed && !this.state.gameStarted && this.state.myUsername ? 
           <React.Fragment>
-            <p className="text-light lead my-0">Pepega Tic Tac Toe</p>
-            <p className="text-light lead my-0">Your name is {this.state.myUsername}.</p>
+            {/* <p className="lead my-0 text-success font-weight-bold" style={{fontSize:25}}>[O] Trodden Coil (You)</p>
+            <p className="lead my-0 text-primary font-weight-bold" style={{fontSize:25}}>[X] Unstitched Scent</p> */}
+            <p className="text-light lead my-0" style={{fontSize:22}}>Multiplayer Pepega Toe</p>
+            <p className="text-light lead my-0" style={{fontSize:22}}>Hello, {this.state.myUsername}.</p>
           </React.Fragment>
           : null }
 
@@ -324,7 +305,7 @@ class App extends React.Component {
           <React.Fragment>
             <img src={loading} alt="Find-Loader" width="75" height="75"></img>
             {/* <p className="text-light lead my-0">Searching for existing hosts...</p> */}
-            <p className="text-light lead my-0">Searching for rooms...</p>
+            <p className="text-light lead my-0" style={{fontSize:22}}>Looking for players...</p>
           </React.Fragment>
           : null }
 
@@ -337,22 +318,25 @@ class App extends React.Component {
 
         { this.state.gameStarted ?
           <React.Fragment>
-            <p className="text-light lead my-0">Player One (O): {this.state.playerOne} {this.state.playerOne === this.state.myUsername && this.state.myUsername !== '' ? '(You)' : null}</p>
-            <p className="text-light lead mt-0 mb-3">Player Two (X): {this.state.playerTwo} {this.state.playerTwo === this.state.myUsername && this.state.myUsername !== '' ? '(You)' : null}</p>
+            <p className="lead my-0 text-success" style={{fontSize:25}}><span className="font-weight-bold">[O]</span> {this.state.playerOne} {this.state.playerOne === this.state.myUsername && this.state.myUsername !== '' ? '(You)' : null}</p>
+            <p className="lead mt-0 mb-2 text-primary" style={{fontSize:25}}><span className="font-weight-bold">[X]</span> {this.state.playerTwo} {this.state.playerTwo === this.state.myUsername && this.state.myUsername !== '' ? '(You)' : null}</p>
+
+            {/* <p className="text-light lead my-0">Player One (O): {this.state.playerOne} {this.state.playerOne === this.state.myUsername && this.state.myUsername !== '' ? '(You)' : null}</p>
+            <p className="text-light lead mt-0 mb-3">Player Two (X): {this.state.playerTwo} {this.state.playerTwo === this.state.myUsername && this.state.myUsername !== '' ? '(You)' : null}</p> */}
 
             { this.checkGame() === this.state.mySymbol ? 
-              <p className="lead text-light text-center my-0">You won!</p> 
+              <p className="lead text-light text-center my-0" style={{fontSize:22}}>You won!</p> 
               : null }
 
             { this.checkGame() === this.state.opponentSymbol ? 
-              <p className="lead text-light text-center my-0">You lost!</p>
+              <p className="lead text-light text-center my-0" style={{fontSize:22}}>You lost!</p>
               : null } 
 
             { this.checkGame() === 'draw' ? 
-              <p className="lead text-light text-center my-0">It's a draw!</p> 
+              <p className="lead text-light text-center my-0" style={{fontSize:22}}>It's a draw!</p> 
               : null }
             { this.checkGame() === 'ongoing' && this.state.gameStarted === true ? 
-              <p className="lead text-light text-center my-0">
+              <p className="lead text-light text-center my-0" style={{fontSize:22}}>
                 { this.state.currentPlayer === this.state.mySymbol ? 
                   "It's your turn." : 
                   `Waiting for ${this.state.myOpponent}'s move.`}
